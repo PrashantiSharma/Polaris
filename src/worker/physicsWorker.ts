@@ -84,19 +84,19 @@ const Y:Rho = [[complex(0,0), complex(0,-1)],[complex(0,1), complex(0,0)]]
 const Z:Rho = [[complex(1,0), complex(0,0)],[complex(0,0), complex(-1,0)]]
 
 function applyDephasing(r:Rho, p:number):Rho{
-  // ρ' = (1-p)ρ + p ZρZ
-  const term1 = matscale(r, 1 - p)
-  const Zr = matmul(Z, matmul(r, Z))
-  const term2 = matscale(Zr, p)
-  return matadd(term1, term2)
+  // Phase damping: keep populations, damp coherences by (1-p)
+  const off01 = r[0][1]
+  const off10 = r[1][0]
+  return [
+    [ r[0][0], complex(off01.re*(1-p), off01.im*(1-p)) ],
+    [ complex(off10.re*(1-p), off10.im*(1-p)), r[1][1] ]
+  ] as Rho
 }
 function applyDepolarizing(r:Rho, p:number):Rho{
-  // ρ' = (1-p)ρ + p/3 (XρX + YρY + ZρZ)
-  const XrX = matmul(X, matmul(r, X))
-  const YrY = matmul(Y, matmul(r, Y))
-  const ZrZ = matmul(Z, matmul(r, Z))
-  const mix = matscale(matadd(matadd(XrX, YrY), ZrZ), p/3)
-  return matadd(matscale(r, 1 - p), mix)
+  // With probability p replace the state with the maximally mixed state I/2
+  const term1 = matscale(r, 1 - p)
+  const term2 = matscale(Id(), p/2)
+  return matadd(term1, term2)
 }
 function applyAmplitudeDamping(r:Rho, gamma:number):Rho{
   // Kraus: E0 = [[1,0],[0, sqrt(1-γ)]], E1 = [[0, sqrt(γ)],[0,0]]
